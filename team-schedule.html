@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Team schedule</title>
+<style>
+  :root{
+    --bg:#F6F5F1;
+    --card:#FFFFFF;
+    --line:#E4E2DA;
+    --line-strong:#CFCCC0;
+    --ink:#20211D;
+    --ink-soft:#6B6A62;
+    --ink-faint:#9C9A8F;
+    --project:#0F6E56;
+    --project-bg:#E1F5EE;
+    --furniture:#4A3F8C;
+    --furniture-bg:#ECEAF7;
+    --siteshow:#8A5A00;
+    --siteshow-bg:#FAEEDA;
+    --office:#185FA5;
+    --office-bg:#E6F1FB;
+    --danger:#A32D2D;
+    --danger-bg:#FCEBEB;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    padding-bottom:2.5rem;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:0 16px;}
+  header{
+    padding:20px 16px 14px;
+    max-width:480px;margin:0 auto;
+  }
+  header h1{font-size:19px;font-weight:600;margin:0 0 2px;letter-spacing:-0.01em;}
+  header p{font-size:13px;color:var(--ink-soft);margin:0;}
+
+  .tabs{display:flex;gap:6px;padding:0 16px 16px;max-width:480px;margin:0 auto;}
+  .tab{
+    flex:1;padding:9px 0;text-align:center;font-size:13px;font-weight:600;
+    border-radius:999px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--ink-soft);cursor:pointer;
+  }
+  .tab.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .label{font-size:12px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px;}
+
+  input[type=date], input[type=text]{
+    width:100%;height:42px;border-radius:9px;border:1px solid var(--line-strong);
+    padding:0 12px;font-size:15px;background:#fff;color:var(--ink);font-family:inherit;
+  }
+  input:focus{outline:none;border-color:var(--ink);}
+
+  .worker-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .chip{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    height:44px;border-radius:9px;border:1.5px solid var(--line-strong);
+    background:#fff;font-size:14px;font-weight:500;cursor:pointer;color:var(--ink);
+  }
+  .chip.sel{background:var(--project-bg);border-color:var(--project);color:var(--project);}
+  .chip .warn{font-size:11px;font-weight:600;color:var(--danger);margin-left:2px;}
+
+  .dept-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .dept{
+    height:46px;border-radius:9px;border:1.5px solid var(--line-strong);background:#fff;
+    font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-soft);padding:0 6px;text-align:center;line-height:1.2;
+  }
+  .dept.selP{background:var(--project-bg);border-color:var(--project);color:var(--project);}
+  .dept.selF{background:var(--furniture-bg);border-color:var(--furniture);color:var(--furniture);}
+  .dept.selS{background:var(--siteshow-bg);border-color:var(--siteshow);color:var(--siteshow);}
+  .dept.selO{background:var(--office-bg);border-color:var(--office);color:var(--office);}
+
+  .conflict{
+    margin-top:10px;padding:10px 12px;border-radius:9px;background:var(--danger-bg);
+    color:var(--danger);font-size:12.5px;font-weight:500;line-height:1.4;
+  }
+
+  button.primary{
+    width:100%;height:46px;border-radius:9px;border:none;background:var(--ink);
+    color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;
+  }
+  button.primary:active{opacity:.85;}
+  button.primary:disabled{background:var(--line-strong);color:var(--ink-faint);}
+
+  .day-group{margin-bottom:18px;}
+  .day-title{font-size:13px;font-weight:700;color:var(--ink-soft);margin:0 0 8px;padding:0 2px;}
+  .booking{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start;
+  }
+  .booking .who{font-size:14.5px;font-weight:600;margin:0 0 2px;}
+  .booking .what{font-size:13px;color:var(--ink-soft);margin:0;}
+  .badge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;}
+  .badge.p{background:var(--project-bg);color:var(--project);}
+  .badge.f{background:var(--furniture-bg);color:var(--furniture);}
+  .badge.s{background:var(--siteshow-bg);color:var(--siteshow);}
+  .badge.o{background:var(--office-bg);color:var(--office);}
+  .del{background:none;border:none;color:var(--ink-faint);font-size:18px;cursor:pointer;padding:0 0 0 8px;line-height:1;}
+
+  .empty{text-align:center;color:var(--ink-faint);font-size:13.5px;padding:40px 20px;}
+  .toast{
+    position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:#fff;font-size:13.5px;font-weight:500;
+    padding:10px 18px;border-radius:999px;opacity:0;transition:opacity .2s;pointer-events:none;
+    max-width:90%;text-align:center;
+  }
+  .toast.show{opacity:1;}
+  .hidden{display:none;}
+  .loading{text-align:center;color:var(--ink-faint);font-size:13.5px;padding:30px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Team schedule</h1>
+  <p>4-worker pool &middot; 4 assignment types</p>
+</header>
+
+<div class="tabs">
+  <div class="tab active" id="tabBook" onclick="switchTab('book')">Book workers</div>
+  <div class="tab" id="tabView" onclick="switchTab('view')">Schedule</div>
+</div>
+
+<div class="wrap">
+
+  <div id="viewBook">
+    <div class="card">
+      <p class="label">Date</p>
+      <input type="date" id="dateInput">
+    </div>
+
+    <div class="card">
+      <p class="label">Select workers</p>
+      <div class="worker-grid" id="workerGrid"></div>
+      <div id="conflictBox"></div>
+    </div>
+
+    <div class="card">
+      <p class="label">Assign to</p>
+      <div class="dept-grid">
+        <button class="dept" id="deptProject" onclick="setDept('project')">Project site</button>
+        <button class="dept" id="deptFurniture" onclick="setDept('furniture')">Delivery and installation</button>
+        <button class="dept" id="deptSiteshow" onclick="setDept('siteshow')">Meeting / siteshow</button>
+        <button class="dept" id="deptOffice" onclick="setDept('office')">Office meeting</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="label">Site / task</p>
+      <input type="text" id="siteInput" placeholder="e.g. Site A - concrete works">
+    </div>
+
+    <button class="primary" id="submitBtn" onclick="submitBooking()">Confirm booking</button>
+  </div>
+
+  <div id="viewSchedule" class="hidden">
+    <div id="scheduleList"><div class="loading">Loading schedule…</div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const WORKERS = ['Ravi', 'Solaman', 'Jewel', 'Safiul'];
+const DEPTS = {
+  project:   { label: 'Project site',               cls: 'p', sel: 'selP' },
+  furniture: { label: 'Delivery and installation',   cls: 'f', sel: 'selF' },
+  siteshow:  { label: 'Meeting / siteshow',          cls: 's', sel: 'selS' },
+  office:    { label: 'Office meeting',              cls: 'o', sel: 'selO' }
+};
+let bookings = [];
+let selectedWorkers = new Set();
+let selectedDept = null;
+
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+function fmtDate(str){
+  const d = new Date(str + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// Paste the Web app URL from your Apps Script deployment here:
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVihu8YXVLgJHedDNze3MAjhT462gOTgI8PLifLHrs-pX3sxn2SVrxnipPIVN3kJzE/exec';
+
+async function loadBookings(){
+  try{
+    const res = await fetch(SCRIPT_URL);
+    const data = await res.json();
+    bookings = (data && data.bookings) ? data.bookings : [];
+  }catch(e){
+    bookings = [];
+    showToast('Could not load schedule. Check connection.');
+  }
+}
+
+async function addBookingRemote(booking){
+  try{
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'add', booking })
+    });
+    const data = await res.json();
+    return !!(data && data.ok);
+  }catch(e){
+    return false;
+  }
+}
+
+async function deleteBookingRemote(id){
+  try{
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'delete', id })
+    });
+    const data = await res.json();
+    return !!(data && data.ok);
+  }catch(e){
+    return false;
+  }
+}
+
+function renderWorkerGrid(){
+  const date = document.getElementById('dateInput').value;
+  const busyToday = bookings.filter(b => b.date === date);
+  const grid = document.getElementById('workerGrid');
+  grid.innerHTML = '';
+  WORKERS.forEach(w => {
+    const existing = busyToday.find(b => b.workers.includes(w));
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (selectedWorkers.has(w) ? ' sel' : '');
+    chip.innerHTML = w + (existing ? ' <span class="warn">busy</span>' : '');
+    chip.onclick = () => {
+      if(selectedWorkers.has(w)) selectedWorkers.delete(w);
+      else selectedWorkers.add(w);
+      renderWorkerGrid();
+      renderConflicts();
+    };
+    grid.appendChild(chip);
+  });
+}
+
+function renderConflicts(){
+  const date = document.getElementById('dateInput').value;
+  const box = document.getElementById('conflictBox');
+  const busyToday = bookings.filter(b => b.date === date);
+  const conflicts = [...selectedWorkers].filter(w => busyToday.some(b => b.workers.includes(w)));
+  if(conflicts.length === 0){ box.innerHTML = ''; return; }
+  const details = conflicts.map(w => {
+    const b = busyToday.find(x => x.workers.includes(w));
+    return w + ' is already booked for ' + DEPTS[b.dept].label + ' (' + b.site + ')';
+  }).join('. ');
+  box.innerHTML = '<div class="conflict">' + details + '.</div>';
+}
+
+const DEPT_BTN_IDS = { project:'deptProject', furniture:'deptFurniture', siteshow:'deptSiteshow', office:'deptOffice' };
+
+function setDept(d){
+  selectedDept = d;
+  Object.keys(DEPT_BTN_IDS).forEach(key => {
+    const btn = document.getElementById(DEPT_BTN_IDS[key]);
+    btn.className = 'dept' + (key === d ? ' ' + DEPTS[key].sel : '');
+  });
+}
+
+async function submitBooking(){
+  const date = document.getElementById('dateInput').value;
+  const site = document.getElementById('siteInput').value.trim();
+  if(selectedWorkers.size === 0){ showToast('Select at least one worker'); return; }
+  if(!selectedDept){ showToast('Choose Project or Furniture'); return; }
+  if(!site){ showToast('Add a site or task'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const booking = {
+    id: 'b' + Date.now(),
+    date, workers: [...selectedWorkers], dept: selectedDept, site,
+    created: Date.now()
+  };
+  const ok = await addBookingRemote(booking);
+  if(ok) bookings.push(booking);
+
+  btn.disabled = false;
+  btn.textContent = 'Confirm booking';
+
+  if(ok){
+    showToast('Booking saved');
+    selectedWorkers = new Set();
+    selectedDept = null;
+    document.getElementById('siteInput').value = '';
+    setDept(null);
+    renderWorkerGrid();
+    renderConflicts();
+  } else {
+    showToast('Could not save. Check connection.');
+  }
+}
+
+async function deleteBooking(id){
+  const ok = await deleteBookingRemote(id);
+  if(ok){
+    bookings = bookings.filter(b => b.id !== id);
+    renderSchedule();
+    renderWorkerGrid();
+  } else {
+    showToast('Could not delete. Check connection.');
+  }
+}
+
+function renderSchedule(){
+  const list = document.getElementById('scheduleList');
+  if(bookings.length === 0){
+    list.innerHTML = '<div class="empty">No bookings yet.<br>Add one from the Book workers tab.</div>';
+    return;
+  }
+  const byDate = {};
+  bookings.forEach(b => { (byDate[b.date] = byDate[b.date] || []).push(b); });
+  const dates = Object.keys(byDate).sort();
+
+  list.innerHTML = '';
+  dates.forEach(date => {
+    const group = document.createElement('div');
+    group.className = 'day-group';
+    const title = document.createElement('p');
+    title.className = 'day-title';
+    title.textContent = fmtDate(date);
+    group.appendChild(title);
+
+    byDate[date].sort((a,b) => a.created - b.created).forEach(b => {
+      const row = document.createElement('div');
+      row.className = 'booking';
+      row.innerHTML = `
+        <div>
+          <p class="who">${b.workers.join(', ')}</p>
+          <p class="what">${b.site}</p>
+        </div>
+        <div style="display:flex;align-items:center;">
+          <span class="badge ${DEPTS[b.dept].cls}">${DEPTS[b.dept].label}</span>
+          <button class="del" onclick="deleteBooking('${b.id}')" aria-label="Delete booking">&times;</button>
+        </div>
+      `;
+      group.appendChild(row);
+    });
+    list.appendChild(group);
+  });
+}
+
+async function switchTab(tab){
+  document.getElementById('tabBook').classList.toggle('active', tab==='book');
+  document.getElementById('tabView').classList.toggle('active', tab==='view');
+  document.getElementById('viewBook').classList.toggle('hidden', tab!=='book');
+  document.getElementById('viewSchedule').classList.toggle('hidden', tab!=='view');
+  await loadBookings();
+  if(tab === 'view') renderSchedule();
+  else { renderWorkerGrid(); renderConflicts(); }
+}
+
+document.getElementById('dateInput').addEventListener('change', () => {
+  renderWorkerGrid();
+  renderConflicts();
+});
+
+(async function init(){
+  document.getElementById('dateInput').value = todayStr();
+  await loadBookings();
+  renderWorkerGrid();
+  renderSchedule();
+})();
+</script>
+
+</body>
+</html>
