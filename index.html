@@ -127,7 +127,7 @@
 
 <header>
   <h1>Team schedule</h1>
-  <p>4-worker pool &middot; 4 assignment types</p>
+  <p>3 workers + 2 supervisors &middot; 4 assignment types</p>
 </header>
 
 <div class="tabs">
@@ -146,6 +146,8 @@
     <div class="card">
       <p class="label">Select workers</p>
       <div class="worker-grid" id="workerGrid"></div>
+      <p class="label" style="margin-top:14px;">Select supervisor</p>
+      <div class="worker-grid" id="supervisorGrid"></div>
       <div id="conflictBox"></div>
     </div>
 
@@ -176,7 +178,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const WORKERS = ['Ravi', 'Solaman', 'Jewel', 'Safiul'];
+const WORKERS = ['Solaman', 'Jewel', 'Alam'];
+const SUPERVISORS = ['Curtis', 'Ravi'];
+const ALL_PEOPLE = WORKERS.concat(SUPERVISORS);
 const DEPTS = {
   project:   { label: 'Project site',               cls: 'p', sel: 'selP' },
   furniture: { label: 'Delivery and installation',   cls: 'f', sel: 'selF' },
@@ -246,12 +250,10 @@ async function deleteBookingRemote(id){
   }
 }
 
-function renderWorkerGrid(){
-  const date = document.getElementById('dateInput').value;
-  const busyToday = bookings.filter(b => b.date === date);
-  const grid = document.getElementById('workerGrid');
+function buildGrid_(containerId, people, busyToday){
+  const grid = document.getElementById(containerId);
   grid.innerHTML = '';
-  WORKERS.forEach(w => {
+  people.forEach(w => {
     const existing = busyToday.find(b => b.workers.includes(w));
     const chip = document.createElement('div');
     chip.className = 'chip' + (selectedWorkers.has(w) ? ' sel' : '');
@@ -264,6 +266,13 @@ function renderWorkerGrid(){
     };
     grid.appendChild(chip);
   });
+}
+
+function renderWorkerGrid(){
+  const date = document.getElementById('dateInput').value;
+  const busyToday = bookings.filter(b => b.date === date);
+  buildGrid_('workerGrid', WORKERS, busyToday);
+  buildGrid_('supervisorGrid', SUPERVISORS, busyToday);
 }
 
 function renderConflicts(){
