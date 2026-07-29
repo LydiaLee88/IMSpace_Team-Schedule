@@ -21,6 +21,8 @@
     --siteshow-bg:#FAEEDA;
     --office:#185FA5;
     --office-bg:#E6F1FB;
+    --others:#5B5A54;
+    --others-bg:#E9E8E2;
     --danger:#A32D2D;
     --danger-bg:#FCEBEB;
     --radius:12px;
@@ -83,6 +85,7 @@
   .dept.selF{background:var(--furniture-bg);border-color:var(--furniture);color:var(--furniture);}
   .dept.selS{background:var(--siteshow-bg);border-color:var(--siteshow);color:var(--siteshow);}
   .dept.selO{background:var(--office-bg);border-color:var(--office);color:var(--office);}
+  .dept.selX{background:var(--others-bg);border-color:var(--others);color:var(--others);}
 
   .conflict{
     margin-top:10px;padding:10px 12px;border-radius:9px;background:var(--danger-bg);
@@ -109,6 +112,7 @@
   .badge.f{background:var(--furniture-bg);color:var(--furniture);}
   .badge.s{background:var(--siteshow-bg);color:var(--siteshow);}
   .badge.o{background:var(--office-bg);color:var(--office);}
+  .badge.x{background:var(--others-bg);color:var(--others);}
   .del{background:none;border:none;color:var(--ink-faint);font-size:18px;cursor:pointer;padding:0 0 0 8px;line-height:1;}
 
   .empty{text-align:center;color:var(--ink-faint);font-size:13.5px;padding:40px 20px;}
@@ -127,7 +131,7 @@
 
 <header>
   <h1>Team schedule</h1>
-  <p>3 workers + 2 supervisors &middot; 4 assignment types</p>
+  <p>Workers, supervisors &amp; office staff &middot; 5 assignment types</p>
 </header>
 
 <div class="tabs">
@@ -148,6 +152,8 @@
       <div class="worker-grid" id="workerGrid"></div>
       <p class="label" style="margin-top:14px;">Select supervisor</p>
       <div class="worker-grid" id="supervisorGrid"></div>
+      <p class="label" style="margin-top:14px;">Select office staff</p>
+      <div class="worker-grid" id="officeGrid"></div>
       <div id="conflictBox"></div>
     </div>
 
@@ -158,6 +164,7 @@
         <button class="dept" id="deptFurniture" onclick="setDept('furniture')">Delivery and installation</button>
         <button class="dept" id="deptSiteshow" onclick="setDept('siteshow')">Meeting / siteshow</button>
         <button class="dept" id="deptOffice" onclick="setDept('office')">Office meeting</button>
+        <button class="dept" id="deptOthers" onclick="setDept('others')">Others</button>
       </div>
     </div>
 
@@ -180,12 +187,14 @@
 <script>
 const WORKERS = ['Solaman', 'Jewel', 'Alam'];
 const SUPERVISORS = ['Curtis', 'Ravi'];
-const ALL_PEOPLE = WORKERS.concat(SUPERVISORS);
+const OFFICE_STAFF = ['May', 'Aya', 'Elicia', 'Zi Yao', 'Lydia'];
+const ALL_PEOPLE = WORKERS.concat(SUPERVISORS, OFFICE_STAFF);
 const DEPTS = {
   project:   { label: 'Project site',               cls: 'p', sel: 'selP' },
   furniture: { label: 'Delivery and installation',   cls: 'f', sel: 'selF' },
   siteshow:  { label: 'Meeting / siteshow',          cls: 's', sel: 'selS' },
-  office:    { label: 'Office meeting',              cls: 'o', sel: 'selO' }
+  office:    { label: 'Office meeting',              cls: 'o', sel: 'selO' },
+  others:    { label: 'Others',                      cls: 'x', sel: 'selX' }
 };
 let bookings = [];
 let selectedWorkers = new Set();
@@ -273,6 +282,7 @@ function renderWorkerGrid(){
   const busyToday = bookings.filter(b => b.date === date);
   buildGrid_('workerGrid', WORKERS, busyToday);
   buildGrid_('supervisorGrid', SUPERVISORS, busyToday);
+  buildGrid_('officeGrid', OFFICE_STAFF, busyToday);
 }
 
 function renderConflicts(){
@@ -288,7 +298,7 @@ function renderConflicts(){
   box.innerHTML = '<div class="conflict">' + details + '.</div>';
 }
 
-const DEPT_BTN_IDS = { project:'deptProject', furniture:'deptFurniture', siteshow:'deptSiteshow', office:'deptOffice' };
+const DEPT_BTN_IDS = { project:'deptProject', furniture:'deptFurniture', siteshow:'deptSiteshow', office:'deptOffice', others:'deptOthers' };
 
 function setDept(d){
   selectedDept = d;
