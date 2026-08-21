@@ -144,7 +144,17 @@
   <div id="viewBook">
     <div class="card">
       <p class="label">Date</p>
-      <input type="date" id="dateInput">
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1;">
+          <p style="font-size:11px;color:var(--ink-faint);margin:0 0 4px;">From</p>
+          <input type="date" id="fromDateInput">
+        </div>
+        <div style="flex:1;">
+          <p style="font-size:11px;color:var(--ink-faint);margin:0 0 4px;">To</p>
+          <input type="date" id="toDateInput">
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--ink-faint);margin:8px 0 0;">Leave "To" the same as "From" for a single day.</p>
     </div>
 
     <div class="card">
@@ -203,6 +213,18 @@ let selectedDept = null;
 function todayStr(){
   const d = new Date();
   return d.toISOString().slice(0,10);
+}
+
+function dateRange(fromStr, toStr){
+  const dates = [];
+  let d = new Date(fromStr + 'T00:00:00');
+  const end = new Date((toStr || fromStr) + 'T00:00:00');
+  if(end < d) return [fromStr];
+  while(d <= end){
+    dates.push(d.toISOString().slice(0,10));
+    d.setDate(d.getDate() + 1);
+  }
+  return dates;
 }
 
 function fmtDate(str){
@@ -278,22 +300,27 @@ function buildGrid_(containerId, people, busyToday){
 }
 
 function renderWorkerGrid(){
-  const date = document.getElementById('dateInput').value;
-  const busyToday = bookings.filter(b => b.date === date);
-  buildGrid_('workerGrid', WORKERS, busyToday);
-  buildGrid_('supervisorGrid', SUPERVISORS, busyToday);
-  buildGrid_('officeGrid', OFFICE_STAFF, busyToday);
+  const from = document.getElementById('fromDateInput').value;
+  const to = document.getElementById('toDateInput').value;
+  const dates = dateRange(from, to);
+  const busyInRange = bookings.filter(b => dates.includes(b.date));
+  buildGrid_('workerGrid', WORKERS, busyInRange);
+  buildGrid_('supervisorGrid', SUPERVISORS, busyInRange);
+  buildGrid_('officeGrid', OFFICE_STAFF, busyInRange);
 }
 
 function renderConflicts(){
-  const date = document.getElementById('dateInput').value;
+  const from = document.getElementById('fromDateInput').value;
+  const to = document.getElementById('toDateInput').value;
+  const dates = dateRange(from, to);
   const box = document.getElementById('conflictBox');
-  const busyToday = bookings.filter(b => b.date === date);
-  const conflicts = [...selectedWorkers].filter(w => busyToday.some(b => b.workers.includes(w)));
+  const busyInRange = bookings.filter(b => dates.includes(b.date));
+  const conflicts = [...selectedWorkers].filter(w => busyInRange.some(b => b.workers.includes(w)));
   if(conflicts.length === 0){ box.innerHTML = ''; return; }
   const details = conflicts.map(w => {
-    const b = busyToday.find(x => x.workers.includes(w));
-    return w + ' is already booked for ' + DEPTS[b.dept].label + ' (' + b.site + ')';
+    const theirBookings = busyInRange.filter(b => b.workers.includes(w));
+    const days = theirBookings.map(b => fmtDate(b.date)).join(', ');
+    return w + ' is already booked on ' + days;
   }).join('. ');
   box.innerHTML = '<div class="conflict">' + details + '.</div>';
 }
@@ -309,33 +336,44 @@ function setDept(d){
 }
 
 async function submitBooking(){
-  const date = document.getElementById('dateInput').value;
+  const from = document.getElementById('fromDateInput').value;
+  const to = document.getElementById('toDateInput').value;
   const site = document.getElementById('siteInput').value.trim();
+  if(!from){ showToast('Pick a "From" date'); return; }
   if(selectedWorkers.size === 0){ showToast('Select at least one worker'); return; }
-  if(!selectedDept){ showToast('Choose Project or Furniture'); return; }
+  if(!selectedDept){ showToast('Choose an assignment type'); return; }
   if(!site){ showToast('Add a site or task'); return; }
+
+  const dates = dateRange(from, to);
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
-  btn.textContent = 'Saving…';
 
-  const booking = {
-    id: 'b' + Date.now(),
-    date, workers: [...selectedWorkers], dept: selectedDept, site,
-    created: Date.now()
-  };
-  const ok = await addBookingRemote(booking);
-  if(ok) bookings.push(booking);
+  let savedCount = 0;
+  for(let i = 0; i < dates.length; i++){
+    btn.textContent = dates.length > 1 ? `Saving ${i+1}/${dates.length}…` : 'Saving…';
+    const booking = {
+      id: 'b' + Date.now() + '_' + i,
+      date: dates[i], workers: [...selectedWorkers], dept: selectedDept, site,
+      created: Date.now()
+    };
+    const ok = await addBookingRemote(booking);
+    if(ok){ bookings.push(booking); savedCount++; }
+  }
 
   btn.disabled = false;
   btn.textContent = 'Confirm booking';
 
-  if(ok){
-    showToast('Booking saved');
+  if(savedCount === dates.length){
+    showToast(dates.length > 1 ? `Booked ${dates.length} days` : 'Booking saved');
     selectedWorkers = new Set();
     selectedDept = null;
     document.getElementById('siteInput').value = '';
     setDept(null);
+    renderWorkerGrid();
+    renderConflicts();
+  } else if(savedCount > 0){
+    showToast(`Saved ${savedCount} of ${dates.length} days — check connection and retry the rest`);
     renderWorkerGrid();
     renderConflicts();
   } else {
@@ -402,13 +440,21 @@ async function switchTab(tab){
   else { renderWorkerGrid(); renderConflicts(); }
 }
 
-document.getElementById('dateInput').addEventListener('change', () => {
+document.getElementById('fromDateInput').addEventListener('change', () => {
+  const from = document.getElementById('fromDateInput').value;
+  const toEl = document.getElementById('toDateInput');
+  if(!toEl.value || toEl.value < from) toEl.value = from;
+  renderWorkerGrid();
+  renderConflicts();
+});
+document.getElementById('toDateInput').addEventListener('change', () => {
   renderWorkerGrid();
   renderConflicts();
 });
 
 (async function init(){
-  document.getElementById('dateInput').value = todayStr();
+  document.getElementById('fromDateInput').value = todayStr();
+  document.getElementById('toDateInput').value = todayStr();
   await loadBookings();
   renderWorkerGrid();
   renderSchedule();
