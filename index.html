@@ -210,9 +210,14 @@ let bookings = [];
 let selectedWorkers = new Set();
 let selectedDept = null;
 
+function pad2_(n){ return n < 10 ? '0' + n : '' + n; }
+
+function toLocalDateStr_(d){
+  return d.getFullYear() + '-' + pad2_(d.getMonth() + 1) + '-' + pad2_(d.getDate());
+}
+
 function todayStr(){
-  const d = new Date();
-  return d.toISOString().slice(0,10);
+  return toLocalDateStr_(new Date());
 }
 
 function dateRange(fromStr, toStr){
@@ -221,7 +226,7 @@ function dateRange(fromStr, toStr){
   const end = new Date((toStr || fromStr) + 'T00:00:00');
   if(end < d) return [fromStr];
   while(d <= end){
-    dates.push(d.toISOString().slice(0,10));
+    dates.push(toLocalDateStr_(d));
     d.setDate(d.getDate() + 1);
   }
   return dates;
